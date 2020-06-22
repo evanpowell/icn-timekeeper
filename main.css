@@ -1,0 +1,25 @@
+body {
+  background-color: rgb(66, 66, 66);
+  box-sizing: border-box;
+}
+
+#canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.wrapper {
+  width: 500px;
+  height: 500px;
+  position: relative;
+}
+
+.timedate {
+  color: white;
+  position: absolute;
+  width: 100%;
+  top: 50%;
+  text-align: center;
+  transform: translateY(-50%);
+  font-size: 32px;
+}
