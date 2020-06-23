@@ -1,24 +1,25 @@
 var cvs = document.getElementById('canvas')
 var ctx = setUpCanvas();
-ctx.textAlign = 'center';
-ctx.textBaseline = 'middle';
-ctx.font = '25px Trebuchet MS';
-ctx.fillStyle = 'white';
 ctx.lineWidth = 23;
 
 function setUpCanvas () {
     // Get the device pixel ratio, falling back to 1.
     var dpr = window.devicePixelRatio || 1;
+
     // Get the size of the canvas in CSS pixels.
     var rect = cvs.getBoundingClientRect();
+
     // Give the canvas pixel dimensions of their CSS
     // size * the device pixel ratio.
     cvs.width = rect.width * dpr;
     cvs.height = rect.height * dpr;
+
     var ctx = canvas.getContext('2d');
+
     // Scale all drawing operations by the dpr, so you
     // don't have to worry about the difference.
     ctx.scale(dpr, dpr);
+
     return ctx;
 }
 
@@ -38,10 +39,36 @@ var draw = (function () {
      * @return void
      */
     return function (r, p, c) {
-        p = p;
+        p = p || 100;
         ctx.strokeStyle = c;
         ctx.beginPath();
         ctx.arc(250, 250, r, start, p * end + start, false);
+        ctx.stroke();
+    };
+}());
+
+/**
+ * @closure
+ */
+var drawFinisher = (function () {
+    var start = 1.5 * Math.PI; // Start circle from top
+    var end = (2 * Math.PI) / 100; // One percent of circle
+
+    /**
+     * Draw percentage of a circle
+     *
+     * @param {number} r Radius
+     * @param {number} p Percentage of circle
+     * @param {string} c Stroke color
+     * @param {number} finalPercent final percent
+     * @return void
+     */
+    return function (r, p, c, finalPercent) {
+        var endOfPath = p * end + start;
+        var newStart = start + (p / finalPercent) * 100 * end;
+        ctx.strokeStyle = c;
+        ctx.beginPath();
+        ctx.arc(250, 250, r, newStart, endOfPath, false);
         ctx.stroke();
     };
 }());
@@ -64,27 +91,73 @@ var clock = function () {
     var monthUnit = 28 * dayUnit;
     var yearUnit = 13 * monthUnit;
 
-    var monthP = 100 / yearUnit * (month * monthUnit + (day * dayUnit + (h * hourUnit + (m * minuteUnit) + (s * 1000) + ms)));
-    var dayP = 100 / monthUnit * (day * dayUnit + (h * hourUnit + (m * minuteUnit) + (s * 1000) + ms));
+    // monthP, dayP, hp, mp, and sp are the percentages each path (100 is full circle)
+    var monthP;
+    var dayP;
+
+    if (!month) {
+        monthP = 0;
+        dayP = 0;
+    } else {
+        monthP = 100 / yearUnit * (month * monthUnit + (day * dayUnit + (h * hourUnit + (m * minuteUnit) + (s * 1000) + ms)));
+        dayP = 100 / monthUnit * (day * dayUnit + (h * hourUnit + (m * minuteUnit) + (s * 1000) + ms));
+    }
+
     var hp = 100 / dayUnit * (h * hourUnit + (m * minuteUnit) + (s * 1000) + ms);
     var mp = 100 / hourUnit * (m * minuteUnit + (s * 1000) + ms);
     var sp = 100 / minuteUnit * (s * 1000 + ms);
+
+
     // Ensure double digits
     h = h < 10 ? '0' + h : h;
     m = m < 10 ? '0' + m : m;
     s = s < 10 ? '0' + s : s;
 
     ctx.clearRect(0, 0, 500, 500);
-    document.getElementById('timeString').innerHTML = h + ':' + m + ':' + s;
-    draw(125, sp, '#dbfe87');
-    draw(150, mp, '#fac053');
-    draw(175, hp, '#22aaa1');
-    draw(200, dayP, '#233d4d');
+
     draw(225, monthP, '#826c7f');
+    
+    var sThreshold = 5;
+    var mThreshold = sThreshold / 60;
+    var hThreshold = mThreshold / 60;
+    var dThreshold = hThreshold / 24;
+    var monthThreshold = hThreshold / 28;
+    
+    
+    if (sp < sThreshold && sp > 0) {
+        drawFinisher(125, sp, '#dbfe87', sThreshold);
+    } else {
+        draw(125, sp, '#dbfe87');
+    }
+    
+    if (mp < mThreshold && mp > 0) {
+        drawFinisher(150, mp, '#fac053', mThreshold);
+    } else {
+        draw(150, mp, '#fac053');
+    }
+
+    if (hp < hThreshold && hp > 0) {
+        drawFinisher(175, hp, '#22aaa1', hThreshold);
+    } else {
+        draw(175, hp, '#22aaa1');
+    }
+    
+    if (dayP < dThreshold && dayP > 0) {
+        drawFinisher(200, dayP, '#233d4d', dThreshold);
+    } else if (day !== 0) {
+        draw(200, dayP, '#233d4d');
+    }
+
+    if (monthP < monthThreshold && monthP > 0) {
+        drawFinisher(225, monthP, '#826c7f', monthThreshold);
+    } else if (month !== 0) {
+        draw(225, monthP, '#826c7f');
+    }
+
+    document.getElementById('timeString').innerHTML = h + ':' + m + ':' + s;
 };
 
 clock()
-
 
 function getMonthAndDay() {
     var now = new Date();
@@ -128,6 +201,8 @@ function getMonthAndDay() {
     
         if (hdoy === 366) {
             return {
+                month: 0,
+                day: 0,
                 isDriftDay: true
             };
         }
@@ -143,7 +218,7 @@ function getMonthAndDay() {
     if (isDriftDay) {
         dateString += ' -- Drift Day';
     } else {
-        dateString +='. ' + month + '. ' + day;
+        dateString +='.' + month + '.' + day;
     }
 
     document.getElementById('dateString').innerHTML = dateString;
@@ -160,6 +235,4 @@ function getMonthAndDay() {
         month: month
     }
 }
-
-
 
