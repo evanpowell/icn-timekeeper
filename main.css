@@ -1,5 +1,5 @@
 body {
-  background-color: rgb(66, 66, 66);
+  background-color: #0c0c0c;
   box-sizing: border-box;
 }
 
@@ -22,4 +22,9 @@ body {
   text-align: center;
   transform: translateY(-50%);
   font-size: 32px;
+  font-family: 'Open Sans', sans-serif;
+}
+
+#dateString {
+  margin-bottom: 10px;
 }
